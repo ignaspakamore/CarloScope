@@ -273,7 +273,10 @@ int main(int argc, char *argv[])
     cout<<radius<<endl;
     double **data = readCSV(path);
     double explorationRatio = monteCarloIntegral(data, radius, N);
-    cout << explorationRatio << endl;
+
+    cout<<"     RESULTS:\n"
+        <<"Occupied: "<<explorationRatio<<endl
+        <<"Free:     "<<1-explorationRatio<<endl;
 
     return 0;
 }
