@@ -57,8 +57,8 @@ double **random2DArray(int N, int M)
     return array;
 }
 
-double** readCSV(const std::string& filename) {
-    std::ifstream file(filename);
+double** readCSV(string *&filename) {
+    std::ifstream file(*filename);
     int cols = 0;
     int rows = 0;
 
@@ -166,7 +166,7 @@ double computeVectorDistance(double *x1, double *x2)
     return sqrt(distance);
 }
 
-double monteCarloIntegral(double **data, float radius, long int N)
+double monteCarloIntegral(double **data, double *&radius, long long *&N)
 {
     srand(time(0));
 
@@ -177,20 +177,20 @@ double monteCarloIntegral(double **data, float radius, long int N)
 
     int sampleSize = sizeof(dataNorm[0]);
 
-    double **randomArray = random2DArray(N, sampleSize);
+    double **randomArray = random2DArray(*N, sampleSize);
 
-    for (int i=0; i < N; i++)
+    for (int i=0; i < *N; i++)
     {
         for (int j=0; j < sampleSize; j++)
         {
             double distance = computeVectorDistance(randomArray[i], dataNorm[j]);
 
-            if (distance < radius)
+            if (distance < *radius)
             {
                 insideTheSphere += 1.0;
             }
 
-            else if (distance > radius)
+            else if (distance > *radius)
             {
                 outsideTheSphere += 1.0;
             }
@@ -204,13 +204,75 @@ double monteCarloIntegral(double **data, float radius, long int N)
     return explorationRatio;
 }
 
-int main()
-{   
-    string path;
-    path = "example.csv";
+void printHelp(){
+    cout<<"Usage program [options]\n"
+        <<"Options:"
+        <<" -help   Shows this help message\n"
+        <<" -file   Input CSV file\n"
+        <<" -r      Radius\n"
+        <<" -n      Number of Monte Carlo samples\n";
+}
 
+
+void getArguments(int argc, char *argv[], string *&path, double *&radius, long long *&N){
+
+    for (int i=1; i<argc; i++){
+        string arg = argv[i];
+
+        if (arg == "-help"){
+            printHelp();
+        }
+
+        else if (arg == "-file"){
+            if (i+1 < argc){
+                path = new string(argv[i+1]);
+            }
+            else{
+                cout<<"Error: -file requires a CSV file path argument.\n";
+                exit(1);
+            }
+        }
+
+        else if (arg == "-r"){
+            if(i+1 < argc){
+               radius = new double(std::stod(argv[i+1]));
+            }
+            else{
+                cout<<"Error: -r requires a float radius value.\n";
+                exit(1);
+            }
+        }
+
+        else if (arg == "-n"){
+            if(i+1 < argc){
+                N = new long long(std::stoll(argv[i+1]));
+            }
+            else{
+                cout<<"Error: -n requires integer N Monte Carlo sample number.\n";
+                exit(1);
+            }
+        }
+    }
+
+    if (*path == "" && *radius ==0 && *N == 0)
+    {
+        cout<<"Error: One or more input parameters are NULL!\n";
+        exit(1);
+    }
+    return;
+}
+
+int main(int argc, char *argv[])
+{   
+    string* path=nullptr;
+    double* radius=nullptr;
+    long long* N=nullptr;
+
+    getArguments(argc, argv, path, radius, N);
+ 
+    cout<<radius<<endl;
     double **data = readCSV(path);
-    double explorationRatio = monteCarloIntegral(data, 1.2, 10000);
+    double explorationRatio = monteCarloIntegral(data, radius, N);
     cout << explorationRatio << endl;
 
     return 0;
