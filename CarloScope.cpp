@@ -5,6 +5,7 @@
 #include <vector>
 #include <sstream>
 #include <cmath>
+#include <array>
 using namespace std;
 
 float randomFloat(float min, float max)
@@ -12,24 +13,26 @@ float randomFloat(float min, float max)
     return ((float)rand() / RAND_MAX) * (max - min) + min;
 };
 
-float **create2DArray(int N, int M)
+double **create2DArray(int N, int M)
 {
-    float **array = new float *[N];
+    double **array = new double *[N];
 
     for (int i = 0; i < N; i++)
     {
-        array[i] = new float[M];
+        array[i] = new double[M];
     }
     return array;
 };
 
-void delete2DArray(float **array)
+void delete2DArray(double **array)
 {
     delete[] array;
 };
 
-void print2DArray(float **array, int N, int M)
-{
+void print2DArray(double **array)
+{   int N = sizeof(array);
+    int M = sizeof(array[0]);
+
     for (int i = 0; i < N; i++)
     {
         for (int j = 0; j < M; j++)
@@ -40,9 +43,9 @@ void print2DArray(float **array, int N, int M)
     };
 };
 
-float **random2DArray(int N, int M)
+double **random2DArray(int N, int M)
 {
-    float **array = create2DArray(N, M);
+    double **array = create2DArray(N, M);
     for (int i = 0; i < N; i++)
     {
         for (int j = 0; j < M; j++)
@@ -52,48 +55,55 @@ float **random2DArray(int N, int M)
     };
 
     return array;
-};
+}
 
-std::vector<std::vector<float>> readCSV(const std::string &fileName)
-{
-    std::ifstream file(fileName);
+double** readCSV(const std::string& filename) {
+    std::ifstream file(filename);
+    int cols = 0;
+    int rows = 0;
 
-    if (!file.is_open())
-    {
-        std::cerr << "Error: Could not open file.\n";
-        return {}; // Return an empty vector
+    if (!file.is_open()) {
+        std::cerr << "Error: Could not open file " << filename << std::endl;
+        return nullptr;
     }
 
-    std::vector<std::vector<float>> data; // 2D vector to store CSV data
+    std::vector<std::vector<double>> data;
     std::string line;
 
-    while (std::getline(file, line))
-    {
-        std::stringstream ss(line);
-        std::vector<float> row;
-        std::string value;
+    while (std::getline(file, line)) {
+        std::vector<double> row;
+        std::stringstream lineStream(line);
+        std::string cell;
 
-        // Extract values separated by commas
-        while (std::getline(ss, value, ','))
-        {
-            try
-            {
-                // Convert each value to float and push to row
-                row.push_back(std::stof(value)); // std::stof converts string to float
-            }
-            catch (const std::invalid_argument &e)
-            {
-                std::cerr << "Warning: Invalid value in CSV, skipping: " << value << "\n";
-                row.push_back(0); // If conversion fails, add a default value (0.0f)
-            }
+        while (std::getline(lineStream, cell, ',')) {
+            try {row.push_back(std::stod(cell));} // Convert cell to double and add to row
+            catch(const std::invalid_argument& e){}
         }
 
-        data.push_back(row); // Add the row to the 2D vector
+        if (row.size() > cols) {
+            cols = row.size(); // Update the number of columns
+        }
+
+        data.push_back(row);
     }
 
-    file.close(); // Close the file
-    return data;  // Return the 2D vector
+    file.close();
+
+    rows = data.size();
+
+    // Allocate 2D array
+    double** array = new double*[rows];
+
+    for (size_t i = 0; i < rows; ++i) {
+        array[i] = new double[cols](); // Initialize with zeros
+        for (size_t j = 0; j < data[i].size(); ++j) {
+            array[i][j] = data[i][j];
+        }
+    }
+
+    return array;
 }
+
 
 void print2DVector(std::vector<std::vector<float>> data)
 {
@@ -107,9 +117,11 @@ void print2DVector(std::vector<std::vector<float>> data)
     }
 }
 
-std::vector<std::vector<float>> normaliseArray(std::vector<std::vector<float>> array)
-{
-    int numColumns = array[0].size();
+double **normaliseArray(double **array)
+{   
+    int numColumns = sizeof(array[0]);
+    int numRows = sizeof(array);
+
     for (int col = 0; col < numColumns; col++)
     {
 
@@ -117,36 +129,36 @@ std::vector<std::vector<float>> normaliseArray(std::vector<std::vector<float>> a
         float maxVal = array[0][col];
         float minVal = array[0][col];
 
-        for (const auto &row : array)
+        for (int row=0; row<numRows; row++)
         {
-            if (row[col] < minVal)
-                minVal = row[col];
-            if (row[col] > maxVal)
-                maxVal = row[col];
+            if (array[row][col] < minVal)
+                minVal = array[row][col];
+            if (array[row][col] > maxVal)
+                maxVal = array[row][col];
         }
 
         // Normalise each element in array
-        for (auto &row : array)
+        for (int row=0; row<numRows; row++)
         {
 
             if (minVal != maxVal)
             {
-                row[col] = (row[col] - minVal) / (maxVal - minVal);
+                array[row][col] = (array[row][col] - minVal) / (maxVal - minVal);
             }
             else
             {
-                row[col] = 0;
+                array[row][col] = 0;
             }
         }
     }
     return array;
 }
 
-float computeVectorDistance(std::vector<float> x1, float *x2)
+double computeVectorDistance(double *x1, double *x2)
 {
-    float distance = 0;
+    double distance = 0;
 
-    for (int i = 0; i < x1.size(); i++)
+    for (int i = 0; i < sizeof(x1); i++)
     {
         distance += pow((x1[i] - x2[i]), 2);
     }
@@ -154,52 +166,51 @@ float computeVectorDistance(std::vector<float> x1, float *x2)
     return sqrt(distance);
 }
 
-float monteCarloIntegral(std::vector<std::vector<float>> data, float radius, int N)
+double monteCarloIntegral(double **data, float radius, long int N)
 {
     srand(time(0));
 
     float insideTheSphere = 0.0;
     float outsideTheSphere = 0.0;
+    
+    double **dataNorm = normaliseArray(data);
 
-    std::vector<std::vector<float>> dataNorm = normaliseArray(data);
+    int sampleSize = sizeof(dataNorm[0]);
 
-    int statistics[N][dataNorm.size()] = {0};
+    double **randomArray = random2DArray(N, sampleSize);
 
-    for (int i = 0; i < N; i++)
+    for (int i=0; i < N; i++)
     {
-        float **randomSample = random2DArray(dataNorm.size(), dataNorm[0].size());
-
-        for (int j = 0; j < dataNorm.size(); j++)
+        for (int j=0; j < sampleSize; j++)
         {
-            float distance = computeVectorDistance(dataNorm[j], randomSample[j]);
-            if (distance <= radius)
-                statistics[i][j] = 1;
-        }
-    }
+            double distance = computeVectorDistance(randomArray[i], dataNorm[j]);
 
-    for (auto &row : statistics)
-    {
-        for (int i = 0; i < dataNorm.size(); i++)
-        {
-            if (row[i] == 1)
+            if (distance < radius)
+            {
                 insideTheSphere += 1.0;
-            if (row[i] == 0)
-                outsideTheSphere += 1.0;
-        }
-    }
-    cout << insideTheSphere << endl;
-    cout << outsideTheSphere << endl;
+            }
 
-    float explorationRatio = abs(1 - (outsideTheSphere / insideTheSphere));
+            else if (distance > radius)
+            {
+                outsideTheSphere += 1.0;
+            }
+            
+        }
+
+    }
+
+    double explorationRatio = insideTheSphere / outsideTheSphere;
 
     return explorationRatio;
 }
 
 int main()
-{
+{   
+    string path;
+    path = "example.csv";
 
-    std::vector<std::vector<float>> data = readCSV("/home/ignas/Documents/chemspx_corrections/ChemSPX/examples/2d/2d_samples.csv");
-    float explorationRatio = monteCarloIntegral(data, 1, 10000);
+    double **data = readCSV(path);
+    double explorationRatio = monteCarloIntegral(data, 1.2, 10000);
     cout << explorationRatio << endl;
 
     return 0;
