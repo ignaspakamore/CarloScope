@@ -13,6 +13,10 @@ float randomFloat(float min, float max)
     return ((float)rand() / RAND_MAX) * (max - min) + min;
 };
 
+double roundToTwoDecimalPlaces(double value) { 
+    return std::round(value * 100.0) / 100.0; 
+} 
+
 double **create2DArray(int N, int M)
 {
     double **array = new double *[N];
@@ -201,6 +205,8 @@ double monteCarloIntegral(double **data, double *&radius, long long *&N)
 
     double explorationRatio = insideTheSphere / outsideTheSphere;
 
+    explorationRatio = roundToTwoDecimalPlaces(explorationRatio);
+
     return explorationRatio;
 }
 
@@ -268,13 +274,21 @@ int main(int argc, char *argv[])
     double* radius=nullptr;
     long long* N=nullptr;
 
+    cout << R"(
+_________             ______     ________                         
+__  ____/_____ __________  /_______  ___/________________________ 
+_  /    _  __ `/_  ___/_  /_  __ \____ \_  ___/  __ \__  __ \  _ \
+/ /___  / /_/ /_  /   _  / / /_/ /___/ // /__ / /_/ /_  /_/ /  __/
+\____/  \__,_/ /_/    /_/  \____//____/ \___/ \____/_  .___/\___/ 
+                                                    /_/                                                     
+    )" <<endl;
+
     getArguments(argc, argv, path, radius, N);
  
-    cout<<radius<<endl;
     double **data = readCSV(path);
     double explorationRatio = monteCarloIntegral(data, radius, N);
 
-    cout<<"     RESULTS:\n"
+    cout<<"Design Space:\n"
         <<"Occupied: "<<explorationRatio<<endl
         <<"Free:     "<<1-explorationRatio<<endl;
 
